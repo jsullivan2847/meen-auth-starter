@@ -1,0 +1,45 @@
+const express = require("express");
+const bcrypt = require("bcrypt");
+const sessionsRouter = express.Router();
+const session = require("express-session");
+const User = require("../models/user.js");
+const userRouter = require("./users");
+const { compareSync } = require("bcrypt");
+
+//NEW
+sessionsRouter.get("/new", (req, res) => {
+  res.render("sessions/new.ejs", {
+      currentUser: req.session.currentUser
+  });
+});
+
+//DELETE
+sessionsRouter.delete("/", (req, res) => {
+  req.session.destroy((error) => {
+    res.redirect("/");
+  });
+});
+
+//CREATE SESSION //LOGIN
+sessionsRouter.post("/", (req, res) => {
+  User.findOne({ email: req.body.email }, (error, foundUser) => {
+    if (!foundUser) {
+      res.send("sorry no user with that email");
+    } else {
+      const passwordMatches = bcrypt.compareSync(
+        req.body.password,
+        foundUser.password
+      );
+      if (passwordMatches) {
+        req.session.currentUser = foundUser;
+        res.redirect("/");
+      } else {
+        res.send("oops! Invalid credentials");
+      }
+    }
+  });
+});
+
+
+
+module.exports = sessionsRouter;
